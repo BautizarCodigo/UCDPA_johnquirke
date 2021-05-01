@@ -43,13 +43,14 @@ class ProjectDetailAnalysis:
         df = self.import_data()
         sns.set_theme(style="whitegrid")
 
-        #Price
+        '''Price'''
         #sns.displot(df, y='PRICE', height=5,aspect=2)
 
         #Analysis of Charts to find extra information and outliers
         ''' Boxplot '''
         #sns.boxplot(x=df["PRICE"])
         #sns.boxplot(x="BEDROOMS", y="PRICE", data=df).set_title('Number of BEDROOMS to PRICE')
+
         ''' Scatterplots'''
         #sns.scatterplot(x='PRICE', y='FLOOR_AREA', data=df)
         #sns.scatterplot(x='PRICE', y='LONGITUDE', data=df)
@@ -65,9 +66,17 @@ class ProjectDetailAnalysis:
         plt.figure(figsize=(12, 7))
         sns.heatmap(df.corr(), annot=True, cmap='viridis')
         plt.ylim(10, 0)
-
-
         plt.show()
+
+    def data_leaning(self):
+        '''Clean the data, find missing data and replace or remove'''
+        df = self.import_data()
+
+        #Percentage of missing DATA in the DATA frame
+        percentage_missing = 100 * df.isnull().sum() / len(df)
+
+
+
 
 
 
@@ -80,5 +89,5 @@ class ProjectDetailAnalysis:
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
-    hp.explore_the_data()
+    hp.data_leaning()
 
