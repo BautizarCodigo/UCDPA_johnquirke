@@ -4,7 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
+
 from matplotlib import figure
+from sklearn.model_selection import train_test_split
 
 
 
@@ -76,18 +79,41 @@ class ProjectDetailAnalysis:
         percentage_missing = 100 * df.isnull().sum() / len(df)
 
 
+    def process_data(self):
+        '''Convert categorical variable into dummy/indicator variables.'''
+
+        df = self.import_data()
+        #Use Dummies values for suburbs
+        df2 = pd.get_dummies(df['SUBURB'])
 
 
+        #Use the mean of Garages and Build to numbers for NULL values
+        df.fillna(df.mean(), inplace=True)
+
+        #New column for the month sold and cast to INT
+        df['MONTH_SOLD'] = df['DATE_SOLD'].apply(lambda month: int(month[0:2]))
+
+        # New column for the Year sold and cast to INT
+        df['YEAR_SOLD'] = df['DATE_SOLD'].apply(lambda year: int(year[-5:]))
 
 
+        #Drop Columns not needed anymore
+        df.drop(labels=['ADDRESS', 'SUBURB', 'NEAREST_STN', 'NEAREST_SCH_RANK', 'DATE_SOLD', 'NEAREST_SCH'], axis=1, inplace=True)
 
+        #Join up the new DATAFRAMES
+        dataframes = [df, df2]
+        test_data = pd.concat(dataframes, axis=1)
 
+        return test_data
 
+    def train_testing(self):
 
+        test_data = self.process_data()
 
+        print(test_data.head())
 
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
-    hp.data_leaning()
+    hp.train_testing()
 
