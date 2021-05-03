@@ -8,7 +8,10 @@ import seaborn as sns
 
 from matplotlib import figure
 from sklearn.model_selection import train_test_split
-
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+from tensorflow.keras.optimizers import Adam
 
 
 class ProjectDetailAnalysis:
@@ -20,7 +23,6 @@ class ProjectDetailAnalysis:
         perth_prices = pd.read_csv(BASE_PATH + '/DATA/all_perth_310121.csv')
 
         return perth_prices
-
 
     def explore_the_data(self):
         '''Create reports that will give an understanding of the dataset
@@ -78,7 +80,6 @@ class ProjectDetailAnalysis:
         #Percentage of missing DATA in the DATA frame
         percentage_missing = 100 * df.isnull().sum() / len(df)
 
-
     def process_data(self):
         '''Convert categorical variable into dummy/indicator variables.'''
 
@@ -107,10 +108,42 @@ class ProjectDetailAnalysis:
         return test_data
 
     def train_testing(self):
+        '''Scaling and Train Test Split'''
 
         test_data = self.process_data()
 
-        print(test_data.head())
+        X = test_data.drop('PRICE', axis=1)
+        y = test_data['PRICE']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=101)
+
+
+        scaler = MinMaxScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
+        #Creating a Model
+
+        model = Sequential()
+
+        model.add(Dense(19, activation='relu'))
+        model.add(Dense(19, activation='relu'))
+        model.add(Dense(19, activation='relu'))
+        model.add(Dense(19, activation='relu'))
+        model.add(Dense(1))
+
+        model.compile(optimizer='adam', loss='mse')
+
+        model.fit(x=X_train, y=y_train.values,
+                  validation_data=(X_test, y_test.values),
+                  batch_size=128, epochs=300)
+
+        losses = pd.DataFrame(model.history.history)
+
+        losses.plot()
+
+        plt.show()
+
+
 
 
 if __name__ == "__main__":
