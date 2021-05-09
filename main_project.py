@@ -3,12 +3,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import tensorflow as tf
 
 
 
 from matplotlib import figure
+from sklearn.metrics import classification_report,confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import f1_score
+
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.optimizers import Adam
@@ -17,6 +21,7 @@ from tensorflow.keras.optimizers import Adam
 class ProjectDetailAnalysis:
 
     def import_data(self):
+        '''Imports the data to be processed'''
 
         BASE_PATH = os.path.dirname(os.path.abspath(__file__))
         '''Import the data that will be analyse'''
@@ -87,9 +92,11 @@ class ProjectDetailAnalysis:
         #Use Dummies values for suburbs
         df2 = pd.get_dummies(df['SUBURB'])
 
-
         #Use the mean of Garages and Build to numbers for NULL values
         df.fillna(df.mean(), inplace=True)
+
+        #Create a value if a property has a garage or not
+        df['HAS_GARAGE'] = df['GARAGE'].apply(lambda x: 1 if x >= 11 or x <= 1 else 0)
 
         #New column for the month sold and cast to INT
         df['MONTH_SOLD'] = df['DATE_SOLD'].apply(lambda month: int(month[0:2]))
@@ -102,19 +109,24 @@ class ProjectDetailAnalysis:
         df.drop(labels=['ADDRESS', 'SUBURB', 'NEAREST_STN', 'NEAREST_SCH_RANK', 'DATE_SOLD', 'NEAREST_SCH'], axis=1, inplace=True)
 
         #Join up the new DATAFRAMES
+        print(df.shape)
         dataframes = [df, df2]
         test_data = pd.concat(dataframes, axis=1)
 
         return test_data
 
-    def train_testing(self):
+        #return df
+
+    def supervised_testing_tensor(self):
         '''Scaling and Train Test Split'''
 
         test_data = self.process_data()
 
+
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=101)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 
         scaler = MinMaxScaler()
@@ -128,25 +140,51 @@ class ProjectDetailAnalysis:
         model.add(Dense(19, activation='relu'))
         model.add(Dense(19, activation='relu'))
         model.add(Dense(19, activation='relu'))
-        model.add(Dense(19, activation='relu'))
         model.add(Dense(1))
 
         model.compile(optimizer='adam', loss='mse')
 
         model.fit(x=X_train, y=y_train.values,
                   validation_data=(X_test, y_test.values),
-                  batch_size=128, epochs=300)
+                  batch_size=128, epochs=100)
 
+        #Convert losses to a Dataframe, loss and validation loss
         losses = pd.DataFrame(model.history.history)
-
         losses.plot()
 
-        plt.show()
+        predictions = model.predict_classes(X_test)
+        print(predictions.shape)
+        print(y_test.shape)
+        print()
+        print(classification_report(y_test, predictions))
+        print()
+        print(confusion_matrix(y_test,predictions,  target_names='PRICE'))
+
+
+
+
+        #Model Evaluation, Testing on a brand new house
+        # single_house = test_data.drop('PRICE', axis=1).iloc[400]
+        # single_house = scaler.transform(single_house.values.reshape(-1, 336))
+        # print("*** Prediction " + str(model.predict(single_house)))
+        # print("*** Actual Data of house " + str(test_data.iloc[400]['PRICE']))
+        # print("*** Accuracy  " + str(test_data.iloc[400]['PRICE'] / model.predict(single_house)))
+        #
+        # #predictions = model.predict_classes(X_test)
+        #
+        # predictions = np.argmax(model.predict(X_test), axis=-1)
+        # print(classification_report(y_test, predictions))
+
+        #plt.show()
+
+
+
 
 
 
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
-    hp.train_testing()
+    hp.supervised_testing_tensor()
+
 
