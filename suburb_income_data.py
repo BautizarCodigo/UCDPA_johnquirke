@@ -1,3 +1,6 @@
+import csv
+
+
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import pprint
@@ -5,40 +8,30 @@ import pprint
 class PerthIncomeSuburb:
 
     def fetch_data(self):
-        ''' Fetches the income data from the suburbs of perth'''
+        """Fetches the income data from the suburbs of perth"""
 
-        html_doc = 'http://house.speakingsame.com/suburbtop.php?sta=wa&cat=Median+household+income&name=Weekly+income'
-        soup = BeautifulSoup(urlopen(html_doc), "html.parser")
-        #text = soup.get_text()
+        base_url = 'http://house.speakingsame.com/suburbtop.php?sta=wa&cat=Median+household+income&name=Weekly+income&page='
+        pages= [0, 1, 2, 3]
+        locations = []
+        income = []
 
-        #print(text)
+        for page in range(len(pages)):
+            soup = BeautifulSoup(urlopen(base_url + str(page ) ), "html.parser")
+            table = soup.find(lambda tag: tag.name == 'table' and tag.has_attr('id') and tag['id'] == "mainT")
+            rows = table.findAll(lambda tag: tag.name == 'tr')[42:92]
 
-        #Get the Table data
-        table = soup.find(lambda tag: tag.name == 'table' and tag.has_attr('id') and tag['id'] == "mainT")
-        rows = table.findAll(lambda tag: tag.name == 'tr')[42:92]
+            for i in rows:
+               locations.append(i.get_text(" ")[3:-7].strip())
+               income.append(i.get_text(" ")[-5:].replace(',', ''))
 
-        incomes = []
-        for i in rows:
-            incomes.append(i.get_text())
+        weekly_incomes = zip(locations,income)
 
+        with open('suburb_Weekly_income.csv', 'w', newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(['Suburb','Weekly Income'])
 
-        for details in incomes:
-            print(details)
-            # i.encode("ascii", "ignore")
-            # print(i.split("$"))
-
-
-
-
-
-
-
-
-
-
-
-
-
+            for row in weekly_incomes:
+                writer.writerow(row)
 
 
 
