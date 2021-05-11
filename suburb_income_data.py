@@ -1,4 +1,5 @@
 import csv
+import re
 
 
 from bs4 import BeautifulSoup
@@ -21,16 +22,22 @@ class PerthIncomeSuburb:
             rows = table.findAll(lambda tag: tag.name == 'tr')[42:92]
 
             for i in rows:
-               locations.append(i.get_text(" ")[3:-7].strip())
-               income.append(i.get_text(" ")[-5:].replace(',', ''))
+                #Add Suburbs
+                locations.append(i.get_text(" ")[3:-7].strip())
 
-        weekly_incomes = zip(locations,income)
+                # Low income Suburbs
+                if '$' in i.get_text(" ")[-4:]:
+                    income.append(i.get_text(" ")[-3:].replace(',', ''))
+                else:
+                    income.append(i.get_text(" ")[-5:].replace(',', ''))
+
+        weekly_incomes = list(zip(locations,income))
 
         with open('suburb_Weekly_income.csv', 'w', newline="") as file:
             writer = csv.writer(file)
             writer.writerow(['Suburb','Weekly Income'])
 
-            for row in weekly_incomes:
+            for row in weekly_incomes[:-1]: #Removes << Page, Next page >>
                 writer.writerow(row)
 
 

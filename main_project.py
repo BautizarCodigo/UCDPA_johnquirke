@@ -21,7 +21,7 @@ from tensorflow.keras.optimizers import Adam
 class ProjectDetailAnalysis:
 
     def import_data(self):
-        '''Imports the data to be processed'''
+        """Imports the data to be processed"""
 
         BASE_PATH = os.path.dirname(os.path.abspath(__file__))
         '''Import the data that will be analyse'''
@@ -79,16 +79,17 @@ class ProjectDetailAnalysis:
         plt.show()
 
     def data_leaning(self):
-        '''Clean the data, find missing data and replace or remove'''
+        """Clean the data, find missing data and replace or remove"""
         df = self.import_data()
 
         #Percentage of missing DATA in the DATA frame
         percentage_missing = 100 * df.isnull().sum() / len(df)
 
     def process_data(self):
-        '''Convert categorical variable into dummy/indicator variables.'''
+        """Convert categorical variable into dummy/indicator variables."""
 
         df = self.import_data()
+
         #Use Dummies values for suburbs
         df2 = pd.get_dummies(df['SUBURB'])
 
@@ -115,10 +116,9 @@ class ProjectDetailAnalysis:
 
         return test_data
 
-        #return df
 
     def supervised_testing_tensor(self):
-        '''Scaling and Train Test Split'''
+        """Scaling and Train Test Split"""
 
         test_data = self.process_data()
 
