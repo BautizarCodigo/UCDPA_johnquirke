@@ -1,5 +1,5 @@
 import csv
-import re
+import os
 
 
 from bs4 import BeautifulSoup
@@ -10,7 +10,7 @@ class PerthIncomeSuburb:
 
     def fetch_data(self):
         """Fetches the income data from the suburbs of perth"""
-
+        BASE_PATH = os.path.dirname(os.path.abspath(__file__))
         base_url = 'http://house.speakingsame.com/suburbtop.php?sta=wa&cat=Median+household+income&name=Weekly+income&page='
         pages= [0, 1, 2, 3]
         locations = []
@@ -33,14 +33,12 @@ class PerthIncomeSuburb:
 
         weekly_incomes = list(zip(locations,income))
 
-        with open('suburb_Weekly_income.csv', 'w', newline="") as file:
+        with open( BASE_PATH  + '/DATA/suburb_Weekly_income.csv', 'w', newline="") as file:
             writer = csv.writer(file)
             writer.writerow(['Suburb','Weekly Income'])
 
             for row in weekly_incomes[:-1]: #Removes << Page, Next page >>
                 writer.writerow(row)
-
-
 
 if __name__ == "__main__":
     income = PerthIncomeSuburb()
