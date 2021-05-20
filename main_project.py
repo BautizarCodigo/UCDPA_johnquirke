@@ -14,7 +14,9 @@ from sklearn.metrics import classification_report,confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import f1_score
+from sklearn.neighbors import KNeighborsClassifier
+
+
 from sklearn import metrics
 
 
@@ -196,9 +198,6 @@ class ProjectDetailAnalysis:
         print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
         print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
 
-
-
-
     def keras_regression(self):
         """Scaling and Train Test Split"""
 
@@ -269,6 +268,26 @@ class ProjectDetailAnalysis:
         print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
         print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
 
+    def k_nearest_neighbours(self):
+        test_data = self.process_data()
+
+        X = test_data.drop('GARAGE', axis=1).values
+        y = test_data['GARAGE'].values
+
+        # splitting Train and Test
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=21)
+
+        knn = KNeighborsClassifier(n_neighbors=5)
+        knn.fit(X_train, y_train)
+        y_pred = knn.predict(X_test)
+
+        print("Test set predictions: " + str(y_pred))
+
+        #print("Test set predictions: \\n {}").format(y_pred)
+
+
+
+
 
 
     def supervised_testing_tensor(self):
@@ -316,5 +335,6 @@ if __name__ == "__main__":
     #hp.graph_the_data()
     #hp.supervised_testing_tensor()
     #hp.linear_regression_testing()
-    hp.keras_regression()
+    #hp.keras_regression()
+    hp.k_nearest_neighbours()
 
