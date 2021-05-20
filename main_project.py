@@ -21,6 +21,9 @@ from sklearn import metrics
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation,Dropout
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
 
 
 class ProjectDetailAnalysis:
@@ -39,6 +42,10 @@ class ProjectDetailAnalysis:
         model_data = pd.concat(data_sources)
 
         return perth_prices
+
+    def find_pattern_data(self):
+        pass
+
 
     def explore_the_dataset(self):
         '''Create reports that will give an understanding of the dataset
@@ -144,21 +151,21 @@ class ProjectDetailAnalysis:
 
         test_data = self.process_data()
 
-        X = test_data.drop('PRICE', axis=1)
-        y = test_data['PRICE']
+        X = test_data.drop('PRICE', axis=1).values
+        y = test_data['PRICE'].values
 
         # splitting Train and Test
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=40)
-
-
-
-        regressor = LinearRegression()
-        regressor.fit(X_train, y_train)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=101)
 
         # standardization scaler - fit&transform on train, fit only on test
         s_scaler = MinMaxScaler()
         X_train = s_scaler.fit_transform(X_train.astype(np.float))
         X_test = s_scaler.transform(X_test.astype(np.float))
+
+        # Multiple Liner Regression
+        from sklearn.linear_model import LinearRegression
+        regressor = LinearRegression()
+        regressor.fit(X_train, y_train)
 
         # evaluate the model (intercept and slope)
         print(regressor.intercept_)
@@ -168,35 +175,34 @@ class ProjectDetailAnalysis:
         y_pred = regressor.predict(X_test)
 
         # put results as a DataFrame
-        coeff_df = pd.DataFrame(regressor.coef_, test_data.drop('PRICE', axis=1).columns, columns=['SUBURB'])
+        coeff_df = pd.DataFrame(regressor.coef_, test_data.drop('PRICE', axis=1).columns, columns=['Coefficient'])
         print(coeff_df)
 
-
-        #compare actual output values with predicted values
-        y_pred = regressor.predict(X_test)
-        predict = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
-        print(predict.head(10))
-
-        #
-        #
-        # # evaluate the performance of the algorithm (MAE - MSE - RMSE)
-        #
-        # print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
-        # print('MSE:', metrics.mean_squared_error(y_test, y_pred))
-        # print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
-        # print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
-
+        # visualizing residuals
         fig = plt.figure(figsize=(10, 5))
         residuals = (y_test - y_pred)
-        sns.displot(residuals)
+        sns.distplot(residuals)
         plt.show()
 
+        # compare actual output values with predicted values
+        y_pred = regressor.predict(X_test)
+        df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+        df1 = df.head(10)
+        print(df1)
+        # evaluate the performance of the algorithm (MAE - MSE - RMSE)
+        from sklearn import metrics
+        print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
+        print('MSE:', metrics.mean_squared_error(y_test, y_pred))
+        print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
+        print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
 
-    def supervised_testing_tensor(self):
+
+
+
+    def keras_regression(self):
         """Scaling and Train Test Split"""
 
         test_data = self.process_data()
-
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
 
@@ -204,23 +210,25 @@ class ProjectDetailAnalysis:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         #Scale the set
-        #scaler = MinMaxScaler()
-        scaler = StandardScaler()
+        scaler = MinMaxScaler()
+        ##scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
 
-        #Creating a Model
-        model = Sequential()
-        model.add(Dense(336, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(168, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(84, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(42, activation='relu'))
-        model.add(Dense(21, activation='relu'))
 
-        # output layer
+        #Define Sequential model with 5 layers
+
+        model = keras.Sequential(
+            [
+            layers.Dense(336, activation='relu', name="layer1"),
+            layers.Dense(168, activation='relu', name="layer2"),
+            layers.Dense(84, activation='relu', name="layer3"),
+            layers.Dense(42, activation='relu', name="layer4"),
+            layers.Dense(21, activation='relu', name="layer5"),
+            ]
+        )
+
+           # output layer
         model.add(Dense(1))
 
         # Compile model
@@ -228,11 +236,11 @@ class ProjectDetailAnalysis:
 
         model.fit(x=X_train, y=y_train.values,
                   validation_data=(X_test, y_test.values),
-                  batch_size=256, epochs=50)
+                  batch_size=256, epochs=100)
 
         #Convert losses to a Dataframe, loss and validation loss
         losses = pd.DataFrame(model.history.history)
-        print(losses)
+        #print(losses)
         losses.plot()
         plt.show()
 
@@ -242,6 +250,20 @@ class ProjectDetailAnalysis:
 
         y_pred = model.predict(X_test)
 
+        model.pop()
+        print(len(model.layers))  # 2
+        model.summary()
+        #Model Evaluation, Testing on a brand new house
+        single_house = test_data.drop('PRICE', axis=1).iloc[300]
+        #print(test_data.iloc[300])
+        print()
+        single_house = scaler.transform(single_house.values.reshape(-1, 336))
+        print("Prediction: " + str(model.predict(single_house)))
+        print("Actual Price of house: " + str(test_data.iloc[300]['PRICE']))
+        print("Accuracy:  " + str(test_data.iloc[300]['PRICE'] / model.predict(single_house)))
+
+        print()
+
         print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
         print('MSE:', metrics.mean_squared_error(y_test, y_pred))
         print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
@@ -249,19 +271,7 @@ class ProjectDetailAnalysis:
 
 
 
-
-
-        #Model Evaluation, Testing on a brand new house
-        single_house = test_data.drop('PRICE', axis=1).iloc[300]
-        print(test_data.iloc[300])
-        single_house = scaler.transform(single_house.values.reshape(-1, 336))
-        print("Prediction: " + str(model.predict(single_house)))
-        print("Actual Price of house: " + str(test_data.iloc[300]['PRICE']))
-        print("Accuracy:  " + str(test_data.iloc[300]['PRICE'] / model.predict(single_house)))
-
-
-
-    def keras_regression(self):
+    def supervised_testing_tensor(self):
 
         test_data = self.process_data()
 
@@ -283,7 +293,7 @@ class ProjectDetailAnalysis:
 
         model.compile(optimizer='Adam', loss='mse')
 
-        model.fit(x=X_train, y=y_train, validation_data=(X_test, y_test), batch_size=128, epochs=200)
+        model.fit(x=X_train, y=y_train, validation_data=(X_test, y_test), batch_size=128, epochs=100)
 
         model.summary()
         # Convert losses to a Dataframe, loss and validation loss
@@ -305,6 +315,6 @@ if __name__ == "__main__":
     #hp.process_data()
     #hp.graph_the_data()
     #hp.supervised_testing_tensor()
-    hp.linear_regression_testing()
-    #hp.keras_regression()
+    #hp.linear_regression_testing()
+    hp.keras_regression()
 
