@@ -8,12 +8,12 @@ import tensorflow as tf
 
 
 
-from matplotlib import figure
-from scipy import stats
+from numpy import random
 from sklearn.metrics import classification_report,confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from sklearn.linear_model import LinearRegression
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -26,6 +26,7 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.callbacks import EarlyStopping
 
 
 class ProjectDetailAnalysis:
@@ -38,10 +39,7 @@ class ProjectDetailAnalysis:
 
         '''Import the data that will be analyse'''
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
-        income = pd.read_csv(self.BASE_PATH + '/DATA/suburb_Weekly_income.csv')
 
-        data_sources = [perth_prices,income]
-        model_data = pd.concat(data_sources)
 
         return perth_prices
 
@@ -116,6 +114,8 @@ class ProjectDetailAnalysis:
         df['INCOME_SUBURB'] = df['SUBURB'].map(income_dict)
 
 
+
+
         # Use Dummies values for suburbs
         df2 = pd.get_dummies(df['SUBURB'])
 
@@ -148,6 +148,23 @@ class ProjectDetailAnalysis:
         test_data = pd.concat(dataframes, axis=1)
 
         return test_data
+
+
+    def  variance_elements(self):
+        '''Find the elements that effect the price the most'''
+        test_data = self.process_data()
+
+        X = test_data.drop('PRICE', axis=1).values
+        y = test_data['PRICE'].values
+
+        elements = test_data.drop('PRICE', axis=1).columns
+        lasso = Lasso(alpha=1)
+        lasso_coef = lasso.fit(X, y).coef_
+        _ = plt.plot(range(len(elements)), lasso_coef)
+        _ = plt.xticks(range(len(elements)), elements, rotation=60)
+
+        plt.show()
+
 
     def linear_regression_testing(self):
 
@@ -205,12 +222,16 @@ class ProjectDetailAnalysis:
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
 
+        # imp = SimpleImputer(missing_values=np.nan, strategy='mean')
+        # imp.fit(X)
+        # X = imp.transform(X)
+
         #Split the data into train and test
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         #Scale the set
-        scaler = MinMaxScaler()
-        ##scaler = StandardScaler()
+        #scaler = MinMaxScaler()
+        scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
 
@@ -233,9 +254,14 @@ class ProjectDetailAnalysis:
         # Compile model
         model.compile(optimizer='adam', loss='mse')
 
-        model.fit(x=X_train, y=y_train.values,
-                  validation_data=(X_test, y_test.values),
-                  batch_size=256, epochs=100)
+        #Stop so not to overfit
+        early_stop = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=25)
+
+        model.fit(x=X_train, y=y_train,
+                  validation_data=(X_test, y_test),
+                  batch_size=128, epochs=600,
+                  verbose=1,
+                  callbacks=[early_stop])
 
         #Convert losses to a Dataframe, loss and validation loss
         losses = pd.DataFrame(model.history.history)
@@ -243,23 +269,23 @@ class ProjectDetailAnalysis:
         losses.plot()
         plt.show()
 
-        # predictions = model.predict_classes(X_test)
-        # print('Classification_report')
-        # print(classification_report(y_test, predictions))
-
         y_pred = model.predict(X_test)
-
         model.pop()
         print(len(model.layers))  # 2
         model.summary()
+
+        #Get a random number to test
+        random_test = x = random.randint(30000)
+        print(random_test)
+
         #Model Evaluation, Testing on a brand new house
-        single_house = test_data.drop('PRICE', axis=1).iloc[300]
+        single_house = test_data.drop('PRICE', axis=1).iloc[random_test]
         #print(test_data.iloc[300])
         print()
         single_house = scaler.transform(single_house.values.reshape(-1, 336))
-        print("Prediction: " + str(model.predict(single_house)))
-        print("Actual Price of house: " + str(test_data.iloc[300]['PRICE']))
-        print("Accuracy:  " + str(test_data.iloc[300]['PRICE'] / model.predict(single_house)))
+        print("Prediction           : " + str(model.predict(single_house)[0][0]))
+        print("Actual Price of house: " + str(test_data.iloc[random_test]['PRICE']))
+        print("Accuracy             :  " + str(test_data.iloc[random_test]['PRICE'] / model.predict(single_house)[0][0]))
 
         print()
 
@@ -267,6 +293,8 @@ class ProjectDetailAnalysis:
         print('MSE:', metrics.mean_squared_error(y_test, y_pred))
         print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
         print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
+
+
 
     def k_nearest_neighbours(self):
         test_data = self.process_data()
@@ -281,12 +309,41 @@ class ProjectDetailAnalysis:
         knn.fit(X_train, y_train)
         y_pred = knn.predict(X_test)
 
-        print("Test set predictions: " + str(y_pred))
+        #print("Test set predictions: " + str(y_pred))
+        #print(confusion_matrix(y_test, y_pred))
+        print(classification_report(y_test, y_pred))
 
-        #print("Test set predictions: \\n {}").format(y_pred)
 
+    def regression_small(self):
+        test_data = self.process_data()
 
+        X = test_data.drop('PRICE', axis=1).values
+        y = test_data['PRICE'].values
 
+        # splitting Train and Test
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=101)
+
+        reg = LinearRegression()
+        cv_results = cross_val_score(reg, X, y, cv=5)
+
+        print("*" * 50)
+        print(cv_results)
+        print(np.mean(cv_results))
+        print("*" * 50)
+
+        #Using Ridge
+        ridge = Ridge(alpha=0.1, normalize=True)
+        ridge.fit(X_train, y_train)
+        ridge_pred = ridge.predict(X_test)
+        print(ridge_pred)
+        print(ridge.score(X_test, y_test))
+        print("*"*50)
+        lasso = Lasso(alpha=0.1, normalize=True)
+        lasso.fit(X_train, y_train)
+        lasso_pred = lasso.predict(X_test)
+        print(lasso_pred)
+        print(lasso.score(X_test, y_test))
+        print("*" * 50)
 
 
 
@@ -305,6 +362,7 @@ class ProjectDetailAnalysis:
         # having 19 neuron is based on the number of available features
         model = Sequential()
         model.add(Dense(336, activation='relu'))
+
         model.add(Dense(168, activation='relu'))
         model.add(Dense(84, activation='relu'))
         model.add(Dense(42, activation='relu'))
@@ -335,6 +393,8 @@ if __name__ == "__main__":
     #hp.graph_the_data()
     #hp.supervised_testing_tensor()
     #hp.linear_regression_testing()
-    #hp.keras_regression()
-    hp.k_nearest_neighbours()
+    hp.keras_regression()
+    #hp.regression_small()
+    #hp.variance_elements()
+    #hp.k_nearest_neighbours()
 
