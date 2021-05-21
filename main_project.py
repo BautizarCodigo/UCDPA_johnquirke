@@ -1,4 +1,5 @@
 import os
+import csv
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -267,7 +268,7 @@ class ProjectDetailAnalysis:
         losses = pd.DataFrame(model.history.history)
         #print(losses)
         losses.plot()
-        plt.show()
+        #plt.show()
 
         y_pred = model.predict(X_test)
         model.pop()
@@ -280,13 +281,17 @@ class ProjectDetailAnalysis:
 
         #Model Evaluation, Testing on a brand new house
         single_house = test_data.drop('PRICE', axis=1).iloc[random_test]
-        #print(test_data.iloc[300])
-        print()
         single_house = scaler.transform(single_house.values.reshape(-1, 336))
-        print("Prediction           : " + str(model.predict(single_house)[0][0]))
-        print("Actual Price of house: " + str(test_data.iloc[random_test]['PRICE']))
-        print("Accuracy             :  " + str(test_data.iloc[random_test]['PRICE'] / model.predict(single_house)[0][0]))
+        prediction = model.predict(single_house)[0][0]
+        actual_price = test_data.iloc[random_test]['PRICE']
+        percent_of_actual = test_data.iloc[random_test]['PRICE'] / model.predict(single_house)[0][0]
+        percent_from_actual = (actual_price - prediction) / actual_price
 
+
+        print("Prediction           : " + str(prediction))
+        print("Actual Price of house: " + str(actual_price))
+        print("Accuracy             :  " + str(percent_of_actual))
+        print("% Difference from Actual  :  " + str(percent_from_actual))
         print()
 
         print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
@@ -295,6 +300,25 @@ class ProjectDetailAnalysis:
         print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
 
 
+
+
+        return random_test, prediction, actual_price, percent_of_actual, percent_from_actual
+
+    def graph_results(self):
+
+        #Run a Series of tests
+        num_of_tests = int(input('How many tests do you want to run? '))
+
+        while num_of_tests > 1:
+            #unpack the tuple
+            house_row, prediction, actual_price, percent_of_actual, percent_from_actual = self.keras_regression()
+
+
+            with open(self.BASE_PATH + '/DATA/model_results.csv', 'a', newline='') as results_file:
+                results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                results_writer.writerow([house_row, prediction, actual_price, percent_of_actual, percent_from_actual])
+
+            num_of_tests = num_of_tests -1
 
     def k_nearest_neighbours(self):
         test_data = self.process_data()
@@ -393,8 +417,9 @@ if __name__ == "__main__":
     #hp.graph_the_data()
     #hp.supervised_testing_tensor()
     #hp.linear_regression_testing()
-    hp.keras_regression()
+    #hp.keras_regression()
     #hp.regression_small()
     #hp.variance_elements()
     #hp.k_nearest_neighbours()
+    hp.graph_results()
 
