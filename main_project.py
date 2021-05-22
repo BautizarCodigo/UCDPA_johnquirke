@@ -4,30 +4,25 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import tensorflow as tf
-
-
 
 
 from numpy import random
-from sklearn.metrics import classification_report,confusion_matrix
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.neighbors import KNeighborsClassifier
-
-
 from sklearn import metrics
-
-
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation,Dropout
-from tensorflow.keras.optimizers import Adam
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
+
+import tensorflow as tf
+from sklearn.metrics import classification_report,confusion_matrix
+from sklearn.impute import SimpleImputer
+from sklearn.neighbors import KNeighborsClassifier
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 
 
 class ProjectDetailAnalysis:
@@ -54,11 +49,9 @@ class ProjectDetailAnalysis:
 
         df = self.import_data()
 
-        print('*'*50)
-        print('Housing Data Analysis Data Perth')
-        print('*' * 50)
+        print('*Housing Data Analysis Data Perth')
         print('Shape is ' + str(df.shape))
-        print('*' * 50)
+        print('* Info' * 50)
         print(df.info())
         print('*' * 50)
         print(df.describe().transpose())
@@ -86,7 +79,7 @@ class ProjectDetailAnalysis:
         ''' Scatterplots'''
         # sns.scatterplot(x='PRICE', y='FLOOR_AREA', data=df)
         # sns.scatterplot(x='PRICE', y='LONGITUDE', data=df)
-        # sns.scatterplot(x='PRICE', y='LONGITUDE', data=df)
+
 
         #Shows the expensive areas
         #sns.set(rc={'figure.figsize': (5, 7)})
@@ -115,16 +108,13 @@ class ProjectDetailAnalysis:
         df['INCOME_SUBURB'] = df['SUBURB'].map(income_dict)
 
 
+        #Check for duplicates
+        df[df.duplicated(keep=False)].count()
 
-
-        # Use Dummies values for suburbs
-        df2 = pd.get_dummies(df['SUBURB'])
-
-        # Fill missing values
-        df['BUILD_YEAR'] = df['BUILD_YEAR'].fillna(df['BUILD_YEAR'].median())
-
-        # Create a value if a property has a garage or not
-        #df['HAS_GARAGE'] = df['GARAGE'].apply(lambda x: 1 if x >= 11 or x <= 1 else 0)
+        # Dealing with the number of Garages
+        #Remove 2 % outliers using quantile
+        x =  df['GARAGE']
+        df['GARAGE'] = x[x.between(x.quantile(.0), x.quantile(.98))] # without outliers
         df['GARAGE'] = df['GARAGE'].fillna(0)  # fill missing data with 0
 
         # New column for the month sold and cast to INT
@@ -133,32 +123,37 @@ class ProjectDetailAnalysis:
         # New column for the Year sold and cast to INT
         df['YEAR_SOLD'] = df['DATE_SOLD'].apply(lambda year: int(year[-5:]))
 
+        # Fill missing values
+        df['BUILD_YEAR'] = df['BUILD_YEAR'].fillna(df['BUILD_YEAR'].median())
+
         # Use the mean of Build to numbers for NULL values
         df.fillna(df.mean(), inplace=True)
+
+        # Use Dummies values for suburbs
+        df2 = pd.get_dummies(df['SUBURB'])
+
+
 
         # Drop Columns not needed anymore
         df.drop(labels=['ADDRESS', 'SUBURB', 'NEAREST_STN', 'NEAREST_SCH_RANK', 'DATE_SOLD', 'NEAREST_SCH'], axis=1,
                 inplace=True)
 
-        #Remove outliers
-        # z_scores = stats.zscore(df)
-        # df = df[(z_scores < 3).all(axis=1)]
-
         # Join up the new DATAFRAMES
         dataframes = [df, df2]
         test_data = pd.concat(dataframes, axis=1)
 
-        return test_data
+        return test_data, df
 
 
     def  variance_elements(self):
         '''Find the elements that effect the price the most'''
-        test_data = self.process_data()
+        test_data, df = self.process_data()
+        sns.set(rc={'figure.figsize': (10, 5)})
 
-        X = test_data.drop('PRICE', axis=1).values
-        y = test_data['PRICE'].values
+        X = df.drop('PRICE', axis=1).values
+        y = df['PRICE'].values
 
-        elements = test_data.drop('PRICE', axis=1).columns
+        elements = df.drop('PRICE',  axis=1).columns
         lasso = Lasso(alpha=1)
         lasso_coef = lasso.fit(X, y).coef_
         _ = plt.plot(range(len(elements)), lasso_coef)
@@ -167,65 +162,12 @@ class ProjectDetailAnalysis:
         plt.show()
 
 
-    def linear_regression_testing(self):
-
-        test_data = self.process_data()
-
-        X = test_data.drop('PRICE', axis=1).values
-        y = test_data['PRICE'].values
-
-        # splitting Train and Test
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=101)
-
-        # standardization scaler - fit&transform on train, fit only on test
-        s_scaler = MinMaxScaler()
-        X_train = s_scaler.fit_transform(X_train.astype(np.float))
-        X_test = s_scaler.transform(X_test.astype(np.float))
-
-        # Multiple Liner Regression
-        from sklearn.linear_model import LinearRegression
-        regressor = LinearRegression()
-        regressor.fit(X_train, y_train)
-
-        # evaluate the model (intercept and slope)
-        print(regressor.intercept_)
-        print(regressor.coef_)
-
-        # predicting the test set result
-        y_pred = regressor.predict(X_test)
-
-        # put results as a DataFrame
-        coeff_df = pd.DataFrame(regressor.coef_, test_data.drop('PRICE', axis=1).columns, columns=['Coefficient'])
-        print(coeff_df)
-
-        # visualizing residuals
-        fig = plt.figure(figsize=(10, 5))
-        residuals = (y_test - y_pred)
-        sns.distplot(residuals)
-        plt.show()
-
-        # compare actual output values with predicted values
-        y_pred = regressor.predict(X_test)
-        df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
-        df1 = df.head(10)
-        print(df1)
-        # evaluate the performance of the algorithm (MAE - MSE - RMSE)
-        from sklearn import metrics
-        print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
-        print('MSE:', metrics.mean_squared_error(y_test, y_pred))
-        print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
-        print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
-
     def keras_regression(self):
         """Scaling and Train Test Split"""
 
         test_data = self.process_data()
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
-
-        # imp = SimpleImputer(missing_values=np.nan, strategy='mean')
-        # imp.fit(X)
-        # X = imp.transform(X)
 
         #Split the data into train and test
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -307,9 +249,10 @@ class ProjectDetailAnalysis:
     def graph_results(self):
 
         #Run a Series of tests
+
         num_of_tests = int(input('How many tests do you want to run? '))
 
-        while num_of_tests > 1:
+        while num_of_tests > 0:
             #unpack the tuple
             house_row, prediction, actual_price, percent_of_actual, percent_from_actual = self.keras_regression()
 
@@ -325,13 +268,6 @@ class ProjectDetailAnalysis:
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
-    #hp.process_data()
-    #hp.graph_the_data()
-    #hp.supervised_testing_tensor()
-    #hp.linear_regression_testing()
-    #hp.keras_regression()
-    #hp.regression_small()
     #hp.variance_elements()
-    #hp.k_nearest_neighbours()
     hp.graph_results()
 
