@@ -31,8 +31,6 @@ class ProjectDetailAnalysis:
 
     def import_data(self):
         """Imports the data to be processed"""
-
-
         '''Import the data that will be analyse'''
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
 
@@ -166,6 +164,7 @@ class ProjectDetailAnalysis:
         """Scaling and Train Test Split"""
 
         test_data = self.process_data()
+
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
 
@@ -202,7 +201,7 @@ class ProjectDetailAnalysis:
 
         model.fit(x=X_train, y=y_train,
                   validation_data=(X_test, y_test),
-                  batch_size=128, epochs=600,
+                  batch_size=128, epochs=400,
                   verbose=1,
                   callbacks=[early_stop])
 
