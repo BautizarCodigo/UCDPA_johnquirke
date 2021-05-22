@@ -31,7 +31,7 @@ class ProjectDetailAnalysis:
 
     def import_data(self):
         """Imports the data to be processed"""
-        '''Import the data that will be analyse'''
+
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
 
 
@@ -143,7 +143,7 @@ class ProjectDetailAnalysis:
         return test_data, df
 
 
-    def  variance_elements(self):
+    def variance_elements(self):
         '''Find the elements that effect the price the most'''
         test_data, df = self.process_data()
         sns.set(rc={'figure.figsize': (10, 5)})
@@ -163,7 +163,8 @@ class ProjectDetailAnalysis:
     def keras_regression(self):
         """Scaling and Train Test Split"""
 
-        test_data = self.process_data()
+        test_data, df = self.process_data()
+
 
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
@@ -269,4 +270,5 @@ if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
     #hp.variance_elements()
     hp.graph_results()
+
 
