@@ -1,8 +1,10 @@
 import os
 import csv
 import pandas as pd
+import PyPDF2
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 import seaborn as sns
 
 
@@ -16,13 +18,13 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
 
-import tensorflow as tf
-from sklearn.metrics import classification_report,confusion_matrix
-from sklearn.impute import SimpleImputer
-from sklearn.neighbors import KNeighborsClassifier
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam
-import tensorflow as tf
+# import tensorflow as tf
+# from sklearn.metrics import classification_report,confusion_matrix
+# from sklearn.impute import SimpleImputer
+# from sklearn.neighbors import KNeighborsClassifier
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.optimizers import Adam
+# import tensorflow as tf
 
 
 class ProjectDetailAnalysis:
@@ -36,9 +38,6 @@ class ProjectDetailAnalysis:
 
 
         return perth_prices
-
-    def find_pattern_data(self):
-        pass
 
 
     def explore_the_dataset(self):
@@ -247,6 +246,7 @@ class ProjectDetailAnalysis:
         return random_test, prediction, actual_price, percent_of_actual, percent_from_actual
 
     def graph_results(self):
+        '''Store the results from testing'''
 
         #Run a Series of tests
 
@@ -263,12 +263,41 @@ class ProjectDetailAnalysis:
 
             num_of_tests = num_of_tests -1
 
+        results_df = pd.read_csv('DATA/model_results.csv').set_axis(
+            ['House row', 'prediction', 'actual_price', 'percent_of_actual', 'percent_from_actual'], axis=1)
 
+        plt.figure(figsize=(16, 8))
+        sns.lineplot(data=results_df[["prediction", "actual_price"]].tail(100), markers=True, dashes=False)
+
+        plt.show()
+
+    def get_pattern(self):
+        '''Get the Old name of the suburb and year'''
+
+        # creating an object
+        file = open(self.BASE_PATH + '/DATA/Perth-suburbs-aboriginal-names.pdf', 'rb')
+        # creating a pdf reader object
+        pdfReader = PyPDF2.PdfFileReader(file)
+        # printing number of pages in pdf file
+        print(pdfReader.numPages)
+        # creating a page object
+        pageObj = pdfReader.getPage(0)
+        # extracting text from page
+        text = pageObj.extractText()
+        match = re.findall("\d[A-Z]+|\d\d\d\d", text)
+
+        for names in match:
+
+            if isinstance(names, str) and len(names) > 4:
+                print(names[1:])
+            if isinstance(names, str) and len(names) == 4:
+                print(names)
 
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
     #hp.variance_elements()
     hp.graph_results()
+    #hp.get_pattern()
 
 
