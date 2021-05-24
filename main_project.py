@@ -36,7 +36,6 @@ class ProjectDetailAnalysis:
 
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
 
-
         return perth_prices
 
 
@@ -209,7 +208,7 @@ class ProjectDetailAnalysis:
         losses = pd.DataFrame(model.history.history)
         #print(losses)
         losses.plot()
-        #plt.show()
+        plt.show()
 
         y_pred = model.predict(X_test)
         model.pop()
@@ -252,7 +251,7 @@ class ProjectDetailAnalysis:
 
         num_of_tests = int(input('How many tests do you want to run? '))
 
-        while num_of_tests > 0:
+        while num_of_tests > 1:
             #unpack the tuple
             house_row, prediction, actual_price, percent_of_actual, percent_from_actual = self.keras_regression()
 
