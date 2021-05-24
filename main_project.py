@@ -1,9 +1,9 @@
-import os
 import csv
-import pandas as pd
-import PyPDF2
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
+import PyPDF2
 import re
 import seaborn as sns
 
@@ -17,14 +17,6 @@ from tensorflow.keras.layers import Dense, Activation,Dropout
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
-
-# import tensorflow as tf
-# from sklearn.metrics import classification_report,confusion_matrix
-# from sklearn.impute import SimpleImputer
-# from sklearn.neighbors import KNeighborsClassifier
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.optimizers import Adam
-# import tensorflow as tf
 
 
 class ProjectDetailAnalysis:
@@ -60,6 +52,7 @@ class ProjectDetailAnalysis:
     def graph_the_data(self):
         '''Explore the data using charts to help get a better
         understanding of the data'''
+        
         df = self.import_data()
         sns.set_theme(style="whitegrid")
 
@@ -91,7 +84,7 @@ class ProjectDetailAnalysis:
         # sns.heatmap(df.corr(), annot=True, cmap='viridis')
         #plt.ylim(10, 0)
 
-        plt.show()
+        #plt.show()
 
     def process_data(self):
         """Convert categorical variable into dummy/indicator variables."""
@@ -217,7 +210,7 @@ class ProjectDetailAnalysis:
 
         #Get a random number to test
         random_test = x = random.randint(30000)
-        print(random_test)
+        print('Row of Dataset ' + str(random_test))
 
         #Model Evaluation, Testing on a brand new house
         single_house = test_data.drop('PRICE', axis=1).iloc[random_test]
@@ -251,7 +244,7 @@ class ProjectDetailAnalysis:
 
         num_of_tests = int(input('How many tests do you want to run? '))
 
-        while num_of_tests > 1:
+        while num_of_tests >= 1:
             #unpack the tuple
             house_row, prediction, actual_price, percent_of_actual, percent_from_actual = self.keras_regression()
 
