@@ -25,9 +25,7 @@ class ProjectDetailAnalysis:
 
     def import_data(self):
         """Imports the data to be processed"""
-
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
-
         return perth_prices
 
 
@@ -36,7 +34,6 @@ class ProjectDetailAnalysis:
         run this function to check details'''
 
         df = self.import_data()
-
         print('*Housing Data Analysis Data Perth')
         print('Shape is ' + str(df.shape))
         print('* Info' * 50)
@@ -201,7 +198,7 @@ class ProjectDetailAnalysis:
         losses = pd.DataFrame(model.history.history)
         #print(losses)
         losses.plot()
-        plt.show()
+        #plt.show()
 
         y_pred = model.predict(X_test)
         model.pop()
@@ -263,7 +260,7 @@ class ProjectDetailAnalysis:
 
         plt.show()
 
-    def get_pattern(self):
+    def regex_pattern(self):
         '''Get the Old name of the suburb and year'''
 
         # creating an object
@@ -272,24 +269,28 @@ class ProjectDetailAnalysis:
         pdfReader = PyPDF2.PdfFileReader(file)
         # printing number of pages in pdf file
         print(pdfReader.numPages)
+        num_pages = pdfReader.numPages
         # creating a page object
-        pageObj = pdfReader.getPage(0)
-        # extracting text from page
-        text = pageObj.extractText()
-        match = re.findall("\d[A-Z]+|\d\d\d\d", text)
 
-        for names in match:
+        while num_pages > 0:
+            pageObj = pdfReader.getPage(num_pages -1)
+            # extracting text from page
+            text = pageObj.extractText()
+            match = re.findall("\d[A-Z]+|\d\d\d\d", text)
 
-            if isinstance(names, str) and len(names) > 4:
-                print(names[1:])
-            if isinstance(names, str) and len(names) == 4:
-                print(names)
+            for names in match:
+                if isinstance(names, str) and len(names) > 4:
+                    print(names[1:])
+                if isinstance(names, str) and len(names) == 4:
+                    print(names)
+
+            num_pages = num_pages -1
 
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
     #hp.variance_elements()
-    hp.graph_results()
-    #hp.get_pattern()
+    #hp.graph_results()
+    hp.regex_pattern()
 
 
