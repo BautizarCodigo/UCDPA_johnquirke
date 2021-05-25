@@ -73,7 +73,7 @@ class ProjectDetailAnalysis:
         #sns.scatterplot(data=df, x='LONGITUDE', y='LATITUDE', hue='PRICE',s=10,marker="+")
 
 
-        # ''' Countplots'''
+        ''' Countplots'''
         #sns.countplot(df['BEDROOMS']).set_title('BEDROOMS in property')
 
         ''' Heatmap '''
@@ -90,8 +90,8 @@ class ProjectDetailAnalysis:
         df = self.import_data()
         income = pd.read_csv('DATA/suburb_Weekly_income.csv')
         income_index = income.set_index('Suburb')
-        income_dict = income_index['Weekly Income'].to_dict()
-        df['INCOME_SUBURB'] = df['SUBURB'].map(income_dict)
+        income_dict = income_index['Weekly Income'].to_dict() #creates a dictionary
+        df['INCOME_SUBURB'] = df['SUBURB'].map(income_dict) #Maps to the suburbs
 
 
         #Check for duplicates
@@ -128,7 +128,7 @@ class ProjectDetailAnalysis:
         dataframes = [df, df2]
         test_data = pd.concat(dataframes, axis=1)
 
-        return test_data, df
+        return test_data, df #export the tuple I might need the original Dataset again.
 
 
     def variance_elements(self):
@@ -152,8 +152,6 @@ class ProjectDetailAnalysis:
         """Scaling and Train Test Split"""
 
         test_data, df = self.process_data()
-
-
         X = test_data.drop('PRICE', axis=1)
         y = test_data['PRICE']
 
@@ -161,8 +159,8 @@ class ProjectDetailAnalysis:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         #Scale the set
-        #scaler = MinMaxScaler()
-        scaler = StandardScaler()
+        scaler = MinMaxScaler()
+        #scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
 
@@ -211,26 +209,22 @@ class ProjectDetailAnalysis:
 
         #Model Evaluation, Testing on a brand new house
         single_house = test_data.drop('PRICE', axis=1).iloc[random_test]
-        single_house = scaler.transform(single_house.values.reshape(-1, 336))
+        single_house = scaler.transform(single_house.values.reshape(-1, 336)) #Scale the single house to match the test set
         prediction = model.predict(single_house)[0][0]
         actual_price = test_data.iloc[random_test]['PRICE']
         percent_of_actual = test_data.iloc[random_test]['PRICE'] / model.predict(single_house)[0][0]
         percent_from_actual = (actual_price - prediction) / actual_price
 
 
-        print("Prediction           : " + str(prediction))
-        print("Actual Price of house: " + str(actual_price))
-        print("Accuracy             :  " + str(percent_of_actual))
+        print("Prediction                :  " + str(prediction))
+        print("Actual Price of house     :  " + str(actual_price))
+        print("Accuracy                  :  " + str(percent_of_actual))
         print("% Difference from Actual  :  " + str(percent_from_actual))
         print()
-
         print('MAE:', metrics.mean_absolute_error(y_test, y_pred))
         print('MSE:', metrics.mean_squared_error(y_test, y_pred))
         print('RMSE:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
         print('VarScore:', metrics.explained_variance_score(y_test, y_pred))
-
-
-
 
         return random_test, prediction, actual_price, percent_of_actual, percent_from_actual
 
@@ -238,13 +232,12 @@ class ProjectDetailAnalysis:
         '''Store the results from testing'''
 
         #Run a Series of tests
-
+        print('*'*30)
         num_of_tests = int(input('How many tests do you want to run? '))
 
         while num_of_tests >= 1:
             #unpack the tuple
             house_row, prediction, actual_price, percent_of_actual, percent_from_actual = self.keras_regression()
-
 
             with open(self.BASE_PATH + '/DATA/model_results.csv', 'a', newline='') as results_file:
                 results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -261,7 +254,7 @@ class ProjectDetailAnalysis:
         plt.show()
 
     def regex_pattern(self):
-        '''Get the Old name of the suburb and year'''
+        '''Read PDF pages and get find the name of the names of the suburbs and year associated with them'''
 
         # creating an object
         file = open(self.BASE_PATH + '/DATA/Perth-suburbs-aboriginal-names.pdf', 'rb')
@@ -289,8 +282,11 @@ class ProjectDetailAnalysis:
 
 if __name__ == "__main__":
     hp = ProjectDetailAnalysis()
+    hp.graph_results()
+
+    #Stand alone functions
+    #hp.regex_pattern()
     #hp.variance_elements()
-    #hp.graph_results()
-    hp.regex_pattern()
+
 
 
