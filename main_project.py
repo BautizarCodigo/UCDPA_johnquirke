@@ -30,7 +30,7 @@ class ProjectDetailAnalysis:
         """Imports the data to be processed"""
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
         return perth_prices
-    
+
 
     def explore_the_dataset(self):
         '''Create reports that will give an understanding of the dataset
@@ -183,7 +183,7 @@ class ProjectDetailAnalysis:
             ]
         )
 
-           # output layer
+        # output layer
         model.add(Dense(1))
 
         # Compile model
