@@ -20,6 +20,9 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 
 class ProjectDetailAnalysis:
+    '''This class will run a test on the Perth Property
+    dataset and predict house prices based on features
+    to run the call in the shell us python main_project.py'''
 
     BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,7 +30,7 @@ class ProjectDetailAnalysis:
         """Imports the data to be processed"""
         perth_prices = pd.read_csv(self.BASE_PATH + '/DATA/all_perth_310121.csv')
         return perth_prices
-
+    
 
     def explore_the_dataset(self):
         '''Create reports that will give an understanding of the dataset
@@ -46,11 +49,14 @@ class ProjectDetailAnalysis:
         percentage_missing = 100 * df.isnull().sum() / len(df)
         print(percentage_missing)
 
+
     def graph_the_data(self):
         '''Explore the data using charts to help get a better
         understanding of the data'''
         
         df = self.import_data()
+
+        #Sets the theme style
         sns.set_theme(style="whitegrid")
 
 
@@ -83,10 +89,12 @@ class ProjectDetailAnalysis:
 
         #plt.show()
 
+
     def process_data(self):
         """Convert categorical variable into dummy/indicator variables."""
 
         # Map the weekly income to the df['SUBURBS']
+        #Loads the file created by /suburb_Weekly_income.py
         df = self.import_data()
         income = pd.read_csv('DATA/suburb_Weekly_income.csv')
         income_index = income.set_index('Suburb')
@@ -98,7 +106,7 @@ class ProjectDetailAnalysis:
         df[df.duplicated(keep=False)].count()
 
         # Dealing with the number of Garages
-        #Remove 2 % outliers using quantile
+        # Remove 2 % outliers using quantile
         x =  df['GARAGE']
         df['GARAGE'] = x[x.between(x.quantile(.0), x.quantile(.98))] # without outliers
         df['GARAGE'] = df['GARAGE'].fillna(0)  # fill missing data with 0
@@ -109,7 +117,7 @@ class ProjectDetailAnalysis:
         # New column for the Year sold and cast to INT
         df['YEAR_SOLD'] = df['DATE_SOLD'].apply(lambda year: int(year[-5:]))
 
-        # Fill missing values
+        # Replace missing values
         df['BUILD_YEAR'] = df['BUILD_YEAR'].fillna(df['BUILD_YEAR'].median())
 
         # Use the mean of Build to numbers for NULL values
@@ -117,8 +125,6 @@ class ProjectDetailAnalysis:
 
         # Use Dummies values for suburbs
         df2 = pd.get_dummies(df['SUBURB'])
-
-
 
         # Drop Columns not needed anymore
         df.drop(labels=['ADDRESS', 'SUBURB', 'NEAREST_STN', 'NEAREST_SCH_RANK', 'DATE_SOLD', 'NEAREST_SCH'], axis=1,
